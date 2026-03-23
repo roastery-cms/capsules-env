@@ -8,7 +8,7 @@ Type-safe environment variable validation and injection plugin for the [Roastery
 
 **@roastery-capsules/env** is an [Elysia](https://elysiajs.com) plugin that validates environment variables at boot time using [TypeBox](https://github.com/sinclairzx81/typebox) schemas and exposes them as a typed `env` decorator throughout your application.
 
-The `env()` function always includes `PORT` and `NODE_ENV` (`DEVELOPMENT` | `TESTING` | `PRODUCTION`) by default, and lets you extend the schema with any additional variables your application needs.
+The `baristaEnv()` function always includes `PORT` and `NODE_ENV` (`DEVELOPMENT` | `TESTING` | `PRODUCTION`) by default, and lets you extend the schema with any additional variables your application needs.
 
 ## Technologies
 
@@ -44,7 +44,7 @@ import { t } from '@roastery/terroir';
 
 const app = new Elysia()
   .use(
-    env(
+    baristaEnv(
       t.Object({
         DATABASE_URL: t.String(),
         JWT_SECRET: t.String(),
@@ -60,7 +60,7 @@ const app = new Elysia()
 
 ### Built-in variables
 
-`env()` always validates and injects the following variables regardless of your schema:
+`baristaEnv()` always validates and injects the following variables regardless of your schema:
 
 | Variable | Type | Values |
 |----------|------|--------|
