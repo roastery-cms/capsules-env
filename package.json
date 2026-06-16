@@ -1,7 +1,7 @@
 {
 	"name": "@roastery-capsules/env",
 	"description": "Type-safe environment variable validation and injection plugin for the Roastery CMS ecosystem.",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"type": "module",
 	"author": {
 		"name": "Alan Reis",
@@ -68,6 +68,7 @@
 		"typescript": "^5"
 	},
 	"dependencies": {
+		"@roastery/aroma": "^0.0.3",
 		"@roastery/barista": "^0.0.5",
 		"@roastery/terroir": "^0.0.9"
 	}

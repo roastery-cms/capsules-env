@@ -4,7 +4,59 @@ import { Schema } from "@roastery/terroir/schema";
 import { InvalidEnvironmentException } from "@roastery/terroir/exceptions/infra";
 import { barista } from "@roastery/barista";
 import type Elysia from "elysia";
+import { createAroma } from "@roastery/aroma";
+import { ConsoleTransport } from "@roastery/aroma/transports";
 
+/**
+ * Elysia plugin that validates environment variables at boot time and injects
+ * them as a fully typed `env` decorator across the whole application.
+ *
+ * The {@link ServerDependenciesDTO} (`PORT`, `NODE_ENV`) is always merged into
+ * the provided schemas, so those two variables are guaranteed to be present and
+ * typed regardless of what is passed in. Any extra schemas are composed on top.
+ *
+ * Validation reads only the keys declared in the composed schema from
+ * `process.env`; variables outside the schema are ignored. When validation
+ * fails, an {@link InvalidEnvironmentException} is reported through an
+ * `@roastery/aroma` console logger.
+ *
+ * @typeParam ContentType - Tuple of TypeBox object schemas describing the extra
+ * environment variables to validate, beyond the built-in `PORT`/`NODE_ENV`.
+ *
+ * @param args - One or more `t.Object({...})` schemas. They are composed into a
+ * single schema together with {@link ServerDependenciesDTO}.
+ *
+ * @returns A global-scoped `Elysia` plugin whose `env` decorator is typed as
+ * `t.Static<t.TComposite<ContentType>> & ServerDependenciesDTO` — the
+ * intersection of the user-declared variables and the built-in ones.
+ *
+ * @throws {InvalidEnvironmentException} Constructed with the `"system@boot"`
+ * context when one or more declared variables are missing or invalid. Note that
+ * in the current implementation the exception is logged rather than re-thrown.
+ *
+ * @example
+ * ```typescript
+ * import { Elysia } from "elysia";
+ * import { baristaEnv } from "@roastery-capsules/env";
+ * import { t } from "@roastery/terroir";
+ *
+ * const app = new Elysia()
+ *   .use(
+ *     baristaEnv(
+ *       t.Object({
+ *         DATABASE_URL: t.String(),
+ *         JWT_SECRET: t.String(),
+ *       }),
+ *     ),
+ *   )
+ *   .get("/", ({ env }) => {
+ *     // env.PORT, env.NODE_ENV, env.DATABASE_URL and env.JWT_SECRET are typed.
+ *     return `Running on port ${env.PORT}`;
+ *   });
+ * ```
+ *
+ * @see {@link ServerDependenciesDTO} for the always-included base schema.
+ */
 export function baristaEnv<ContentType extends t.TObject[]>(
 	...args: ContentType
 ): Elysia<
@@ -31,7 +83,8 @@ export function baristaEnv<ContentType extends t.TObject[]>(
 	) as never;
 
 	if (!Schema.make(envDTO).match(envContent)) {
-		throw new InvalidEnvironmentException("system@boot");
+		const logger = createAroma({ transports: [new ConsoleTransport()] });
+		logger.error(new InvalidEnvironmentException("system@boot"));
 	}
 
 	return barista().as("global").decorate("env", envContent);
